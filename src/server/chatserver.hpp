@@ -8,7 +8,7 @@
 #include <muduo/net/EventLoop.h>
 using namespace muduo;
 
-class Chatserver
+class ChatServer
 {
 private:
     net::TcpServer _server;
@@ -20,7 +20,7 @@ private:
             Timestamp
             );
 public:
-    Chatserver(net::EventLoop* loop,
+    ChatServer(net::EventLoop* loop,
                const net::InetAddress &listenAddr,
                const std::string &nameArg
             );

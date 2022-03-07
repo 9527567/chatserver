@@ -8,7 +8,7 @@ int main()
 {
     net::EventLoop loop;
     net::InetAddress addr("127.0.0.1",6000);
-    Chatserver server(&loop,addr,"Chatserver");
+    ChatServer server(&loop,addr,"Chatserver");
     return 0;
 }
 
