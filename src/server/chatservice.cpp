@@ -16,7 +16,8 @@ ChatService *ChatService::instance()
 //注册回调
 ChatService::ChatService()
 {
-    // 搞清楚这里到底是什么意思。
+    // 搞清楚这里到底是什么意思。this指向的谁？
+    // 在执行任何成员函数时，该成员函数都会自动包含一个隐藏的指针，称为this指针。
     _msgHandlerMap.insert({EnMsgType::LOGIN_MSG,
                            std::bind(&ChatService::login, this, std::placeholders::_1, std::placeholders::_2,
                                      std::placeholders::_3)});
@@ -25,15 +26,7 @@ ChatService::ChatService()
                                      std::placeholders::_3)});
 }
 
-void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)
-{
 
-}
-
-void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)
-{
-    
-}
 
 MsgHandler ChatService::getHandler(int msgid)
 {
@@ -49,4 +42,14 @@ MsgHandler ChatService::getHandler(int msgid)
         };
     }
     return _msgHandlerMap[msgid];
+}
+
+void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)
+{
+    LOG_INFO << "login!";
+}
+
+void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)
+{
+
 }
