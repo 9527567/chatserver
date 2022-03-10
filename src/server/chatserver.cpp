@@ -18,9 +18,9 @@ ChatServer::ChatServer(
         const std::string &nameArg) : _loop(loop), _server(loop, listenAddr, nameArg)
 {
     //注册连接回调
-    _server.setConnectionCallback(std::bind(&ChatServer::onConnection,this,std::placeholders::_1));
+    _server.setConnectionCallback([this](auto && PH1) { onConnection(std::forward<decltype(PH1)>(PH1)); });
     //消息回调
-    _server.setMessageCallback(std::bind(&ChatServer::onMessage,this,std::placeholders::_1,_2,_3));
+    _server.setMessageCallback([this](auto && PH1, auto && PH2, auto && PH3) { onMessage(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3)); });
     //线程数量
     _server.setThreadNum(4);
 }
