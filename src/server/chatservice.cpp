@@ -26,12 +26,11 @@ ChatService::ChatService()
 }
 
 
-
 MsgHandler ChatService::getHandler(int msgid)
 {
     // mdgid没有对应的事件处理回调
     auto it = _msgHandlerMap.find(msgid);
-    if(it==_msgHandlerMap.end())
+    if (it == _msgHandlerMap.end())
     {
 
         // 返回默认的处理器
@@ -48,18 +47,23 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
     int id = js["id"];
     std::string pwd = js["password"];
     User user = _userModel.query(id);
-    if(user.getId()!= id && user.getPassword()==pwd)
+    if (user.getId() != id && user.getPassword() == pwd)
     {
-        if(user.getState()=="online")
+        if (user.getState() == "online")
         {
             json response;
             response["msgid"] = LOGIN_MSG_ACK;
             response["errno"] = 2;
             response["errmsg"] = "该账户已登录";
             conn->send(response.dump());
-        }
-        else
+        } else
         {
+            //登录成功，记录用户信息，stl标准库没有考虑线程安全问题,使用mutex对map加锁
+            {
+                std::lock_guard<std::mutex> lock(_connMutex);
+                _userConnMap.insert(std::pair<int, muduo::net::TcpConnectionPtr>(user.getId(), conn));
+            }
+
             //登录成功，更新用户状态
             user.setState("online");
             _userModel.updateState(user);
@@ -70,8 +74,7 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
             response["name"] = user.getName();
             conn->send(response.dump());
         }
-    }
-    else
+    } else
     {
         json response;
         response["msgid"] = LOGIN_MSG_ACK;
@@ -89,20 +92,41 @@ void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, 
     user.setName(name);
     user.setPassword(pwd);
     bool state = _userModel.insert(user);
-    if(state)
+    if (state)
     {
         json response;
         response["msgid"] = REG_MSG_ACK;
         response["errno"] = 0;
         response["id"] = user.getId();
         conn->send(response.dump());
-    }
-    else
+    } else
     {
         json response;
         response["msgid"] = REG_MSG_ACK;
         response["errno"] = 1;
         response["errmsg"] = 1;
         conn->send(response.dump());
+    }
+}
+
+void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
+{
+    User user;
+    {
+        std::lock_guard<std::mutex> lock(_connMutex);
+        for (auto &[k, v]: _userConnMap)
+        {
+            if (v == conn)
+            {
+                user.setId(k);
+                _userConnMap.erase(k);
+                break;
+            }
+        }
+    }
+    if (user.getId() != -1)
+    {
+        user.setState("offline");
+        _userModel.updateState(user);
     }
 }
