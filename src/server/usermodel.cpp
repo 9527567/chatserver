@@ -42,7 +42,7 @@ User UserModel::query(int id)
                 user.setId(atoi(row[0]));
                 user.setName(row[1]);
                 user.setPassword(row[2]);
-                user.setState("offline");
+                user.setState(row[3]);
                 mysql_free_result(res);
                 return user;
             }
@@ -54,7 +54,7 @@ User UserModel::query(int id)
 bool UserModel::updateState(User user)
 {
     char sql[1024]{0};
-    std::sprintf(sql, "update user set state = %s where id = %d", user.getState().c_str(), user.getId());
+    std::sprintf(sql, "update user set state = '%s' where id = %d", user.getState().c_str(), user.getId());
     MySQL mysql;
     if (mysql.connect())
     {

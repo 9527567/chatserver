@@ -5,7 +5,7 @@
 #include <functional>
 #include "nlohmann/json.hpp"
 #include "chatservice.hpp"
-
+#include <iostream>
 using json = nlohmann::json;
 
 //启动服务
@@ -38,6 +38,7 @@ void ChatServer::onConnection(const net::TcpConnectionPtr &conn)
     //客户端断开连接
     if (!conn->connected())
     {
+        std::cout << "客户端退出链接" <<std::endl;
         ChatService::instance()->clientCloseException(conn);
         conn->shutdown();
     }

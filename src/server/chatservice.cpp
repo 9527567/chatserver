@@ -4,7 +4,7 @@
 #include "chatservice.hpp"
 #include "public.hpp"
 #include "muduo/base/Logging.h"
-
+#include <iostream>
 // 获取单例对象的指针
 ChatService *ChatService::instance()
 {
@@ -119,12 +119,14 @@ void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
     // 因为有多个用户同时登录，所以要对map加锁防止出现线程不安全的情况
     {
         std::lock_guard<std::mutex> lock(_connMutex);
-        for (auto &[k, v]: _userConnMap)
+        for(auto it = _userConnMap.begin();it != _userConnMap.end();it++)
         {
-            if (v == conn)
+            if(it->second == conn)
             {
-                user.setId(k);
-                _userConnMap.erase(k);
+                user.setId(it->first);
+                std::cout << user.getId() << std::endl;
+
+                _userConnMap.erase(it);
                 break;
             }
         }
@@ -142,7 +144,7 @@ void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, mu
     {
         std::lock_guard<std::mutex> lock(_connMutex);
         auto it = _userConnMap.find(toid);
-        if(it!=_userConnMap.end())
+        if (it != _userConnMap.end())
         {
             // toid 不在线
             // 回调函数对象
