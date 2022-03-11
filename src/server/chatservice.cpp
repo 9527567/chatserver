@@ -5,7 +5,6 @@
 #include "public.hpp"
 #include "muduo/base/Logging.h"
 
-
 // 获取单例对象的指针
 ChatService *ChatService::instance()
 {
@@ -51,5 +50,26 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
 
 void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)
 {
-
+    std::string name = js["name"];
+    std::string pwd = js["password"];
+    User user;
+    user.setName(name);
+    user.setPassword(pwd);
+    bool state = _userModel.insert(user);
+    if(state)
+    {
+        json response;
+        response["msgid"] = REG_MSG_ACK;
+        response["errno"] = 0;
+        response["id"] = user.getId();
+        conn->send(response.dump());
+    }
+    else
+    {
+        json response;
+        response["msgid"] = REG_MSG_ACK;
+        response["errno"] = 1;
+        response["errmsg"] = 1;
+        conn->send(response.dump());
+    }
 }

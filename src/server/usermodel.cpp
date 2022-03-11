@@ -9,7 +9,7 @@ bool UserModel::insert(User &user)
 {
     // 1. 组装MySQL语句，不会sql注入吗
     char sql[1024]{0};
-    std::sprintf(sql, "insert into User(name,password,state) value('%s','%s','%s')", user.getName().c_str(),
+    std::sprintf(sql, "insert into user(name,password,state) value('%s','%s','%s')", user.getName().c_str(),
                  user.getPassword().c_str(), user.getState().c_str());
     MySQL mysql;
     if(mysql.connect())

@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include "nlohmann/json.hpp"
 #include "muduo/net/TcpConnection.h"
-
+#include "usermodel.hpp"
 using json = nlohmann::json;
 //表示处理消息的事件回调方法类型
 using MsgHandler = std::function<void(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)>;
@@ -20,6 +20,7 @@ class ChatService
 private:
     //存储消息id和其对应事件的业务处理方法
     std::unordered_map<int,MsgHandler> _msgHandlerMap;
+    UserModel _userModel;
     ChatService();
 public:
     static ChatService* instance();
