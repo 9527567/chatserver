@@ -30,9 +30,12 @@ private:
     ChatService();
 public:
     static ChatService* instance();
-    void login(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp);
-
-    void regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp);
+    // 登录业务
+    void login(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    //注册业务
+    void regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 一对一聊天业务
+    void oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
     // 获取对应消息的处理器
     MsgHandler getHandler(int msgid);
     //客户端异常退出

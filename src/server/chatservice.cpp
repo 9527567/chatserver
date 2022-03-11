@@ -23,6 +23,9 @@ ChatService::ChatService()
     _msgHandlerMap.insert({EnMsgType::REG_MSG,
                            std::bind(&ChatService::regiseter, this, std::placeholders::_1, std::placeholders::_2,
                                      std::placeholders::_3)});
+    _msgHandlerMap.insert(std::pair(EnMsgType::ONE_CHAT_MSG,
+                                    std::bind(&ChatService::oneChat, this, std::placeholders::_1, std::placeholders::_2,
+                                              std::placeholders::_3)));
 }
 
 
@@ -34,7 +37,7 @@ MsgHandler ChatService::getHandler(int msgid)
     {
 
         // 返回默认的处理器
-        return [=](const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)
+        return [=](const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
         {
             LOG_ERROR << "msgid" << msgid << "can not find handler!";
         };
@@ -42,13 +45,14 @@ MsgHandler ChatService::getHandler(int msgid)
     return _msgHandlerMap[msgid];
 }
 
-void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)
+void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
 {
     int id = js["id"];
     std::string pwd = js["password"];
     User user = _userModel.query(id);
-    if (user.getId() != id && user.getPassword() == pwd)
+    if (user.getId() == id && user.getPassword() == pwd)
     {
+
         if (user.getState() == "online")
         {
             json response;
@@ -84,7 +88,7 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
     }
 }
 
-void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)
+void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
 {
     std::string name = js["name"];
     std::string pwd = js["password"];
@@ -112,6 +116,7 @@ void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, 
 void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
 {
     User user;
+    // 因为有多个用户同时登录，所以要对map加锁防止出现线程不安全的情况
     {
         std::lock_guard<std::mutex> lock(_connMutex);
         for (auto &[k, v]: _userConnMap)
@@ -129,4 +134,21 @@ void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
         user.setState("offline");
         _userModel.updateState(user);
     }
+}
+
+void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
+{
+    int toid = js["toid"];
+    {
+        std::lock_guard<std::mutex> lock(_connMutex);
+        auto it = _userConnMap.find(toid);
+        if(it!=_userConnMap.end())
+        {
+            // toid 不在线
+            // 回调函数对象
+            it->second->send(js.dump());
+            return;
+        }
+    }
+    // 离线消息
 }
