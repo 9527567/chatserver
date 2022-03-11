@@ -11,6 +11,9 @@ class UserModel
 public:
     // user表的增加方法
     bool insert(User &user);
+    // 根据用户id查询用户id
+    User query(int id);
+    bool updateState(User user);
 };
 
 #endif //MYMUDUO_USERMODEL_HPP

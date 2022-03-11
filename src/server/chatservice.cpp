@@ -45,7 +45,40 @@ MsgHandler ChatService::getHandler(int msgid)
 
 void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)
 {
-    LOG_INFO << "login!";
+    int id = js["id"];
+    std::string pwd = js["password"];
+    User user = _userModel.query(id);
+    if(user.getId()!= id && user.getPassword()==pwd)
+    {
+        if(user.getState()=="online")
+        {
+            json response;
+            response["msgid"] = LOGIN_MSG_ACK;
+            response["errno"] = 2;
+            response["errmsg"] = "该账户已登录";
+            conn->send(response.dump());
+        }
+        else
+        {
+            //登录成功，更新用户状态
+            user.setState("online");
+            _userModel.updateState(user);
+            json response;
+            response["msgid"] = LOGIN_MSG_ACK;
+            response["errno"] = 0;
+            response["id"] = user.getId();
+            response["name"] = user.getName();
+            conn->send(response.dump());
+        }
+    }
+    else
+    {
+        json response;
+        response["msgid"] = LOGIN_MSG_ACK;
+        response["errno"] = 1;
+        response["errmsg"] = "用户名或者密码错误";
+        conn->send(response.dump());
+    }
 }
 
 void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)
