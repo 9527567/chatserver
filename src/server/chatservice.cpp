@@ -4,6 +4,7 @@
 #include "chatservice.hpp"
 #include "public.hpp"
 #include "muduo/base/Logging.h"
+#include <vector>
 #include <iostream>
 // 获取单例对象的指针
 ChatService *ChatService::instance()
@@ -76,6 +77,13 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
             response["errno"] = 0;
             response["id"] = user.getId();
             response["name"] = user.getName();
+            // 查询离线消息
+            std::vector<std::string > vec = _offlinemsgmodel.query(user.getId());
+            if(!vec.empty())
+            {
+                response["offlinemsg"] = vec;
+                _offlinemsgmodel.remove(user.getId());
+            }
             conn->send(response.dump());
         }
     } else
@@ -153,4 +161,5 @@ void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, mu
         }
     }
     // 离线消息
+    _offlinemsgmodel.insert(toid,js.dump());
 }

@@ -11,6 +11,7 @@
 #include "nlohmann/json.hpp"
 #include "muduo/net/TcpConnection.h"
 #include "usermodel.hpp"
+#include "offlinemessagemodel.hpp"
 using json = nlohmann::json;
 //表示处理消息的事件回调方法类型
 using MsgHandler = std::function<void(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)>;
@@ -27,6 +28,7 @@ private:
     std::mutex _connMutex;
     // 数据库操作类
     UserModel _userModel;
+    OfflineMsgModel _offlinemsgmodel;
     ChatService();
 public:
     static ChatService* instance();
