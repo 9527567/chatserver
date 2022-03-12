@@ -163,3 +163,8 @@ void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, mu
     // 离线消息
     _offlinemsgmodel.insert(toid,js.dump());
 }
+
+void ChatService::reset()
+{
+    _userModel.resetState();
+}

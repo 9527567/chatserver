@@ -14,6 +14,8 @@ public:
     // 根据用户id查询用户id
     User query(int id);
     bool updateState(User user);
+
+    void resetState();
 };
 
 #endif //MYMUDUO_USERMODEL_HPP
