@@ -18,14 +18,17 @@ ChatService::ChatService()
 {
     // 搞清楚这里到底是什么意思。this指向的谁？
     // 在执行任何成员函数时，该成员函数都会自动包含一个隐藏的指针，称为this指针。
-    _msgHandlerMap.insert({EnMsgType::LOGIN_MSG,
+    _msgHandlerMap.insert({static_cast<int>(EnMsgType::LOGIN_MSG),
                            std::bind(&ChatService::login, this, std::placeholders::_1, std::placeholders::_2,
                                      std::placeholders::_3)});
-    _msgHandlerMap.insert({EnMsgType::REG_MSG,
+    _msgHandlerMap.insert({static_cast<int>(EnMsgType::REG_MSG),
                            std::bind(&ChatService::regiseter, this, std::placeholders::_1, std::placeholders::_2,
                                      std::placeholders::_3)});
-    _msgHandlerMap.insert(std::pair(EnMsgType::ONE_CHAT_MSG,
+    _msgHandlerMap.insert(std::pair(static_cast<int>(EnMsgType::ONE_CHAT_MSG),
                                     std::bind(&ChatService::oneChat, this, std::placeholders::_1, std::placeholders::_2,
+                                              std::placeholders::_3)));
+    _msgHandlerMap.insert(std::pair(static_cast<int>(EnMsgType::ADD_FRIEND_MSG),
+                                    std::bind(&ChatService::addFriend, this, std::placeholders::_1, std::placeholders::_2,
                                               std::placeholders::_3)));
 }
 
@@ -57,7 +60,7 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
         if (user.getState() == "online")
         {
             json response;
-            response["msgid"] = LOGIN_MSG_ACK;
+            response["msgid"] = EnMsgType::LOGIN_MSG_ACK;
             response["errno"] = 2;
             response["errmsg"] = "该账户已登录";
             conn->send(response.dump());
@@ -73,23 +76,38 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
             user.setState("online");
             _userModel.updateState(user);
             json response;
-            response["msgid"] = LOGIN_MSG_ACK;
+            response["msgid"] = EnMsgType::LOGIN_MSG_ACK;
             response["errno"] = 0;
             response["id"] = user.getId();
             response["name"] = user.getName();
             // 查询离线消息
-            std::vector<std::string > vec = _offlinemsgmodel.query(user.getId());
-            if(!vec.empty())
+            std::vector<std::string> vec = _offlinemsgmodel.query(user.getId());
+            if (!vec.empty())
             {
                 response["offlinemsg"] = vec;
                 _offlinemsgmodel.remove(user.getId());
+            }
+            // 查询好友信息并返回
+            std::vector<User> userVec = _friendmodel.query(id);
+            if(!userVec.empty())
+            {
+                std::vector<std::string> vec2;
+                json js;
+                for(auto &i:userVec)
+                {
+                    js["id"] = user.getId();
+                    js["name"] = user.getName();
+                    js["state"] = user.getState();
+                    vec2.push_back(js.dump());
+                }
+                response["friends"] = vec2;
             }
             conn->send(response.dump());
         }
     } else
     {
         json response;
-        response["msgid"] = LOGIN_MSG_ACK;
+        response["msgid"] = EnMsgType::LOGIN_MSG_ACK;
         response["errno"] = 1;
         response["errmsg"] = "用户名或者密码错误";
         conn->send(response.dump());
@@ -107,14 +125,14 @@ void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, 
     if (state)
     {
         json response;
-        response["msgid"] = REG_MSG_ACK;
+        response["msgid"] = EnMsgType::REG_MSG_ACK;
         response["errno"] = 0;
         response["id"] = user.getId();
         conn->send(response.dump());
     } else
     {
         json response;
-        response["msgid"] = REG_MSG_ACK;
+        response["msgid"] = EnMsgType::REG_MSG_ACK;
         response["errno"] = 1;
         response["errmsg"] = 1;
         conn->send(response.dump());
@@ -127,9 +145,9 @@ void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
     // 因为有多个用户同时登录，所以要对map加锁防止出现线程不安全的情况
     {
         std::lock_guard<std::mutex> lock(_connMutex);
-        for(auto it = _userConnMap.begin();it != _userConnMap.end();it++)
+        for (auto it = _userConnMap.begin(); it != _userConnMap.end(); it++)
         {
-            if(it->second == conn)
+            if (it->second == conn)
             {
                 user.setId(it->first);
                 std::cout << user.getId() << std::endl;
@@ -161,10 +179,17 @@ void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, mu
         }
     }
     // 离线消息
-    _offlinemsgmodel.insert(toid,js.dump());
+    _offlinemsgmodel.insert(toid, js.dump());
 }
-
+// 服务端异常退出，重置用户状态
 void ChatService::reset()
 {
     _userModel.resetState();
+}
+// 添加好友业务，msgid：业务类型，friendid ，id
+void ChatService::addFriend(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
+{
+    int id = js["id"];
+    int friendId = js["friendid"];
+    _friendmodel.insert(id,friendId);
 }

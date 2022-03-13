@@ -12,6 +12,8 @@
 #include "muduo/net/TcpConnection.h"
 #include "usermodel.hpp"
 #include "offlinemessagemodel.hpp"
+#include "friendmodel.hpp"
+
 using json = nlohmann::json;
 //表示处理消息的事件回调方法类型
 using MsgHandler = std::function<void(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp)>;
@@ -28,7 +30,10 @@ private:
     std::mutex _connMutex;
     // 数据库操作类
     UserModel _userModel;
+    // 离线消息存储查询类
     OfflineMsgModel _offlinemsgmodel;
+    // 好友信息操作类
+    FriendModel _friendmodel;
     ChatService();
 public:
     static ChatService* instance();
@@ -38,6 +43,8 @@ public:
     void regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
     // 一对一聊天业务
     void oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 添加好友业务
+    void addFriend(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
     // 获取对应消息的处理器
     MsgHandler getHandler(int msgid);
     //客户端异常退出
