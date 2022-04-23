@@ -13,6 +13,7 @@
 #include "usermodel.hpp"
 #include "offlinemessagemodel.hpp"
 #include "friendmodel.hpp"
+#include "groupmodel.hpp"
 
 using json = nlohmann::json;
 //表示处理消息的事件回调方法类型
@@ -34,6 +35,7 @@ private:
     OfflineMsgModel _offlinemsgmodel;
     // 好友信息操作类
     FriendModel _friendmodel;
+    GroupModel _groupModel;
     ChatService();
 public:
     static ChatService* instance();
@@ -49,6 +51,12 @@ public:
     MsgHandler getHandler(int msgid);
     //客户端异常退出
     void clientCloseException(const muduo::net::TcpConnectionPtr &conn);
+    // 创建群组
+    void createGroup(const muduo::net::TcpConnectionPtr &conn,json &js,muduo::Timestamp time);
+    // 加入群组
+    void addGroup(const muduo::net::TcpConnectionPtr &conn,json &js,muduo::Timestamp time);
+    // 群组聊天
+    void groupChat(const muduo::net::TcpConnectionPtr &conn,json &js,muduo::Timestamp time);
     // 服务器异常，业务重置方法
     void reset();
 };

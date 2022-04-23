@@ -192,4 +192,44 @@ void ChatService::addFriend(const muduo::net::TcpConnectionPtr &conn, json &js, 
     int id = js["id"];
     int friendId = js["friendid"];
     _friendmodel.insert(id,friendId);
+    // 也可以添加响应
+}
+
+void ChatService::createGroup(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
+{
+    int userid = js["id"].get<int>();
+    std::string name = js["groupname"];
+    std::string desc = js["groupdesc"];
+    Group group(-1,name,desc);
+    if(_groupModel.createGroup(group))
+    {
+        _groupModel.addGroup(userid,group.getId(),"creator");
+    }
+}
+
+void ChatService::addGroup(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
+{
+    int userid = js["id"].get<int>();
+    int groupid = js["groupid"].get<int>();
+    _groupModel.addGroup(userid,groupid,"normal");
+}
+
+void ChatService::groupChat(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
+{
+    int userid = js["id"].get<int>();
+    int groupid = js["groupid"].get<int>();
+    std::vector<int> useridVec = _groupModel.queryGroupUsers(userid,groupid);
+    std::lock_guard<std::mutex> lock(_connMutex);
+    for (int id:useridVec)
+    {
+        auto it = _userConnMap.find(id);
+        if(it!=_userConnMap.end())
+        {
+            it->second->send(js.dump());
+        }
+        else
+        {
+            _offlinemsgmodel.insert(id,js.dump());
+        }
+    }
 }
