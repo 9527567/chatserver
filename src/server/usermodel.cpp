@@ -74,6 +74,7 @@ void UserModel::resetState()
     if (mysql.connect())
     {
         mysql.update(sql);
+
     }
 
 }

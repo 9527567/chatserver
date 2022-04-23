@@ -4,7 +4,6 @@
 
 #ifndef MYMUDUO_USER_HPP
 #define MYMUDUO_USER_HPP
-
 #include <string>
 //user表的orm类，映射user表的数据结构类
 class User
