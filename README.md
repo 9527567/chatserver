@@ -11,9 +11,9 @@
 - CMakeLists.txt
 
 #### 编译
-安装mysql，mysql-client-dev
+安装mariadb，mariadb-client-dev
 ~~~bash
-sudo apt install mysql-server libmysqlclient-dev
+sudo apt install mariadb-server libmariadb-dev mariadb-client
 ~~~
 #### 使用
-需要启动mysql服务，创建对应的数据库和表
+需要启动mariadb服务，创建对应的数据库和表

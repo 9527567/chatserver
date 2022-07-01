@@ -5,7 +5,7 @@
 #ifndef MYMUDUO_MYSQL_HPP
 #define MYMUDUO_MYSQL_HPP
 
-#include <mysql/mysql.h>
+#include <mariadb/mysql.h>
 #include "muduo/base/Logging.h"
 #include <string>
 
