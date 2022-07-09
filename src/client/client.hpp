@@ -64,7 +64,7 @@ void showCurrentUserData();
 // 接收线程
 void readTaskHandler(int clientfd);
 // 获取时间
-void getCurrentTime();
+std::string getCurrentTime();
 // 主聊天页面程序
 void mainMenu(int clientfd);
 #endif //MYMUDUO_CLIENT_HPP

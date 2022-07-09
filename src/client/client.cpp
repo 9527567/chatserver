@@ -226,9 +226,16 @@ void readTaskHandler(int clientfd)
     }
 }
 
-void getCurrentTime()
+// 获取系统时间(聊天信息需要添加时间信息)
+std::string getCurrentTime()
 {
-
+    auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    tm *ptm = localtime(&tt);
+    char date[60]{0};
+    sprintf(date, "%d-%02d-%02d %02d:%02d:%02d", static_cast<int>(ptm->tm_year) + 1900,
+            static_cast<int>(ptm->tm_mon) + 1, static_cast<int>(ptm->tm_mday), static_cast<int>(ptm->tm_hour),
+            static_cast<int>(ptm->tm_min), static_cast<int>(ptm->tm_sec));
+    return static_cast<std::string>(date);
 }
 
 void mainMenu(int clientfd)
@@ -268,14 +275,44 @@ void help(int, std::string)
     std::cout << std::endl;
 }
 
-void chat(int, std::string)
+void chat(int clientfd, std::string str)
 {
-
+    int idx = str.find(":");
+    if (-1 == idx)
+    {
+        std::cerr << "chat command invalid!" << std::endl;
+        return;
+    }
+    int friendid = atoi(str.substr(0, idx).c_str());
+    std::string message = str.substr(idx + 1, str.size() - idx);
+    json js;
+    js["msgid"] = EnMsgType::ONE_CHAT_MSG;
+    js["id"] = g_currentUser.getId();
+    js["name"] = g_currentUser.getName();
+    js["toid"] = friendid;
+    js["msg"] = message;
+    js["time"] = getCurrentTime();
+    std::string buffer = js.dump();
+    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()) + 1, 0);
+    if (-1 == len)
+    {
+        std::cerr << "send char msg error ->" << buffer << std::endl;
+    }
 }
 
-void addfriend(int, std::string)
+void addfriend(int clientfd, std::string str)
 {
-
+    int friendid = atoi(str.c_str());
+    json js;
+    js["msgid"] = EnMsgType::ADD_FRIEND_MSG;
+    js["id"] = g_currentUser.getId();
+    js["friendid"] = friendid;
+    std::string buffer = js.dump();
+    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()) + 1, 0);
+    if (-1 == len)
+    {
+        std::cerr << "send addfriend msg error ->" << buffer << std::endl;
+    }
 }
 
 void creategroup(int, std::string)
