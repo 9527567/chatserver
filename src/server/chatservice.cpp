@@ -6,6 +6,7 @@
 #include "muduo/base/Logging.h"
 #include <vector>
 #include <iostream>
+
 // 获取单例对象的指针
 ChatService *ChatService::instance()
 {
@@ -28,7 +29,8 @@ ChatService::ChatService()
                                     std::bind(&ChatService::oneChat, this, std::placeholders::_1, std::placeholders::_2,
                                               std::placeholders::_3)));
     _msgHandlerMap.insert(std::pair(static_cast<int>(EnMsgType::ADD_FRIEND_MSG),
-                                    std::bind(&ChatService::addFriend, this, std::placeholders::_1, std::placeholders::_2,
+                                    std::bind(&ChatService::addFriend, this, std::placeholders::_1,
+                                              std::placeholders::_2,
                                               std::placeholders::_3)));
 }
 
@@ -59,6 +61,7 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
 
         if (user.getState() == "online")
         {
+            // 该用户已经登陆，不允许登录
             json response;
             response["msgid"] = EnMsgType::LOGIN_MSG_ACK;
             response["errno"] = 2;
@@ -89,11 +92,11 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
             }
             // 查询好友信息并返回
             std::vector<User> userVec = _friendmodel.query(id);
-            if(!userVec.empty())
+            if (!userVec.empty())
             {
                 std::vector<std::string> vec2;
                 json js;
-                for(auto &i:userVec)
+                for (auto &i: userVec)
                 {
                     js["id"] = user.getId();
                     js["name"] = user.getName();
@@ -101,6 +104,32 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
                     vec2.push_back(js.dump());
                 }
                 response["friends"] = vec2;
+            }
+            // 查询用户群组消息
+            std::vector<Group> groupuserVec = _groupModel.queryGroups(id);
+            if (!groupuserVec.empty())
+            {
+                // group:[{groupid:[xxx,xxx,xxx]}]
+                std::vector<std::string> groupV;
+                for (auto &group: groupuserVec)
+                {
+                    json grpjson;
+                    grpjson["id"] = group.getId();
+                    grpjson["groupname"] = group.getName();
+                    grpjson["groupdesc"] = group.getDesc();
+                    std::vector<std::string> userV;
+                    for (auto &user: group.getUser())
+                    {
+                        json js;
+                        js["id"] = user.getId();
+                        js["name"] = user.getName();
+                        js["state"] = user.getState();
+                        js["role"] = user.getRole();
+                        userV.push_back(js.dump());
+                    }
+                    grpjson["users"] = userV;
+                    groupV.push_back(grpjson.dump());
+                }
             }
             conn->send(response.dump());
         }
@@ -181,17 +210,19 @@ void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, mu
     // 离线消息
     _offlinemsgmodel.insert(toid, js.dump());
 }
+
 // 服务端异常退出，重置用户状态
 void ChatService::reset()
 {
     _userModel.resetState();
 }
+
 // 添加好友业务，msgid：业务类型，friendid ，id
 void ChatService::addFriend(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
 {
     int id = js["id"];
     int friendId = js["friendid"];
-    _friendmodel.insert(id,friendId);
+    _friendmodel.insert(id, friendId);
     // 也可以添加响应
 }
 
@@ -200,10 +231,10 @@ void ChatService::createGroup(const muduo::net::TcpConnectionPtr &conn, json &js
     int userid = js["id"].get<int>();
     std::string name = js["groupname"];
     std::string desc = js["groupdesc"];
-    Group group(-1,name,desc);
-    if(_groupModel.createGroup(group))
+    Group group(-1, name, desc);
+    if (_groupModel.createGroup(group))
     {
-        _groupModel.addGroup(userid,group.getId(),"creator");
+        _groupModel.addGroup(userid, group.getId(), "creator");
     }
 }
 
@@ -211,25 +242,24 @@ void ChatService::addGroup(const muduo::net::TcpConnectionPtr &conn, json &js, m
 {
     int userid = js["id"].get<int>();
     int groupid = js["groupid"].get<int>();
-    _groupModel.addGroup(userid,groupid,"normal");
+    _groupModel.addGroup(userid, groupid, "normal");
 }
 
 void ChatService::groupChat(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
 {
     int userid = js["id"].get<int>();
     int groupid = js["groupid"].get<int>();
-    std::vector<int> useridVec = _groupModel.queryGroupUsers(userid,groupid);
+    std::vector<int> useridVec = _groupModel.queryGroupUsers(userid, groupid);
     std::lock_guard<std::mutex> lock(_connMutex);
-    for (int id:useridVec)
+    for (int id: useridVec)
     {
         auto it = _userConnMap.find(id);
-        if(it!=_userConnMap.end())
+        if (it != _userConnMap.end())
         {
             it->second->send(js.dump());
-        }
-        else
+        } else
         {
-            _offlinemsgmodel.insert(id,js.dump());
+            _offlinemsgmodel.insert(id, js.dump());
         }
     }
 }

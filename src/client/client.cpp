@@ -1,21 +1,5 @@
 #include "client.hpp"
 
-void showCurrentUserData()
-{
-
-}
-void readTaskHandler(int clientfd)
-{
-
-}
-void getCurrentTime()
-{
-
-}
-void mainMenu()
-{
-
-}
 int main(int argc, char **argv)
 {
     if (argc < 3)
@@ -154,7 +138,7 @@ int main(int argc, char **argv)
                             std::thread readTask(readTaskHandler, clinetfd);
                             readTask.detach();
                             // 进入聊天主页面
-                            mainMenu();
+                            mainMenu(clinetfd);
                         }
                     }
                 }
@@ -214,3 +198,94 @@ int main(int argc, char **argv)
         }
     }
 }
+
+void showCurrentUserData()
+{
+
+}
+
+void readTaskHandler(int clientfd)
+{
+    for (;;)
+    {
+        char buffer[1024]{0};
+        int len = recv(clientfd, buffer, 1024, 0);
+        if (-1 != len || 0 == len)
+        {
+            close(clientfd);
+            exit(-1);
+        }
+        // 接收charserver转发的数据，反序列化输出
+        json js = json::parse(buffer);
+        if (static_cast<int>(EnMsgType::ONE_CHAT_MSG) == js["msgid"].get<int>())
+        {
+            std::cout << js["time"].get<std::string>() << "[" << js["id"] << "]" << js["name"].get<std::string>()
+                      << "said:" << js["msg"].get<std::string>() << std::endl;
+            continue;
+        }
+    }
+}
+
+void getCurrentTime()
+{
+
+}
+
+void mainMenu(int clientfd)
+{
+    help();
+    for (;;)
+    {
+        char buffer[1024]{0};
+        std::string commandBuf(buffer);
+        std::string command;
+        int idx = commandBuf.find(":");
+        if (-1 == idx)
+        {
+            command = commandBuf;
+        } else
+        {
+            command = commandBuf.substr(0, idx);
+        }
+        auto it = commandHandlerMap.find(command);
+        if (it == commandHandlerMap.end())
+        {
+            std::cerr << "invalid input command!" << std::endl;
+            continue;
+        }
+        it->second(clientfd, commandBuf.substr(idx + 1, commandBuf.size() - idx));
+    }
+
+}
+
+void help(int, std::string)
+{
+    std::cout << "show command list" << std::endl;
+    for (auto &[k, v]: commandMap)
+    {
+        std::cout << k << ":" << v << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+void chat(int, std::string)
+{
+
+}
+
+void addfriend(int, std::string)
+{
+
+}
+
+void creategroup(int, std::string)
+{}
+
+void addgroup(int, std::string)
+{}
+
+void groupchat(int, std::string)
+{}
+
+void loginout(int, std::string)
+{}
