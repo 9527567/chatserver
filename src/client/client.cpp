@@ -315,14 +315,62 @@ void addfriend(int clientfd, std::string str)
     }
 }
 
-void creategroup(int, std::string)
-{}
+void creategroup(int clientfd, std::string str)
+{
+    int idx = str.find(":");
+    if (-1 == idx)
+    {
+        std::cerr << "creategroup command invalid!" << std::endl;
+    }
+    std::string groupname = str.substr(0, idx);
+    std::string groupdesc = str.substr(idx + 1, str.size() - idx);
+    json js;
+    js["id"] = g_currentUser.getId();
+    js["groupname"] = groupname;
+    js["groupdesc"] = groupdesc;
+    std::string buffer = js.dump();
+    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
+    if (-1 == len)
+    {
+        std::cerr << "send creategroup msg error->" << buffer << std::endl;
+    }
 
-void addgroup(int, std::string)
-{}
+}
 
-void groupchat(int, std::string)
-{}
+void addgroup(int clientfd, std::string str)
+{
+    int groupid = atoi(str.c_str());
+    json js;
+    js["id"] = g_currentUser.getId();
+    js["groupid"] = groupid;
+    std::string buffer = js.dump();
+    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
+    if (-1 == len)
+    {
+        std::cerr << "send addgroup msg error->" << buffer << std::endl;
+    }
+}
+
+void groupchat(int clientfd, std::string str)
+{
+    int idx = str.find(":");
+    if (-1 == idx)
+    {
+        std::cerr << "groupchat command invaild" << std::endl;
+    }
+    int groupid = atoi(str.substr(0, idx).c_str());
+    std::string message = str.substr(idx + 1, str.size() - idx);
+    json js;
+    js["id"] = g_currentUser.getId();
+    js["groupid"] = groupid;
+    js["message"] = message;
+    std::string buffer = js.dump();
+    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
+    if (-1 == len)
+    {
+        std::cerr << "send gorupchat msg error->" << buffer << std::endl;
+    }
+}
 
 void loginout(int, std::string)
 {}

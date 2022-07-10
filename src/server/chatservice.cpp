@@ -32,6 +32,19 @@ ChatService::ChatService()
                                     std::bind(&ChatService::addFriend, this, std::placeholders::_1,
                                               std::placeholders::_2,
                                               std::placeholders::_3)));
+    _msgHandlerMap.insert(std::pair(static_cast<int>(EnMsgType::CREATE_GROUP_MSG),
+                                    std::bind(&ChatService::createGroup, this, std::placeholders::_1,
+                                              std::placeholders::_2,
+                                              std::placeholders::_3)));
+    _msgHandlerMap.insert(std::pair(static_cast<int>(EnMsgType::ADD_GROUP_MSG),
+                                    std::bind(&ChatService::addGroup, this, std::placeholders::_1,
+                                              std::placeholders::_2,
+                                              std::placeholders::_3)));
+    _msgHandlerMap.insert(std::pair(static_cast<int>(EnMsgType::GROUP_CHAT_MSG),
+                                    std::bind(&ChatService::groupChat, this, std::placeholders::_1,
+                                              std::placeholders::_2,
+                                              std::placeholders::_3)));
+
 }
 
 
