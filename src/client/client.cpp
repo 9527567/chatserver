@@ -54,7 +54,7 @@ int main(int argc, char **argv)
                 std::cout << "user-password:";
                 std::cin.getline(pwd, 50);// 可以保留空格
                 json js;
-                js["msg_id"] = EnMsgType::LOGIN_MSG;
+                js["msgid"] = static_cast<int>(EnMsgType::LOGIN_MSG);
                 js["id"] = id;
                 js["password"] = pwd;
                 std::string request = js.dump();
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
                 std::cin.getline(pwd, 50);
 
                 json js;
-                js["msg_id"] = EnMsgType::REG_MSG;
+                js["msgid"] = static_cast<int>(EnMsgType::REG_MSG);
                 js["name"] = name;
                 js["password"] = pwd;
                 std::string request = js.dump();
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
                             std::cerr << name << "is already exist,register error!" << std::endl;
                         } else// 注册成功
                         {
-                            std::cout << "register success,userid is" << responsejs["id"] << "do not forget it"
+                            std::cout << "register success,userid is " << responsejs["id"] << " do not forget it"
                                       << std::endl;
                         }
                     }
@@ -189,7 +189,6 @@ int main(int argc, char **argv)
                 close(clinetfd);
                 exit(0);
             }
-                break;
             default:
             {
                 std::cerr << "Invalid input!" << std::endl;
@@ -201,8 +200,33 @@ int main(int argc, char **argv)
 
 void showCurrentUserData()
 {
-
+    std::cout << "======================login user======================" << std::endl;
+    std::cout << "current login user => id:" << g_currentUser.getId() << " name:" << g_currentUser.getName()
+              << std::endl;
+    std::cout << "----------------------friend list---------------------" << std::endl;
+    if (!g_currentUserFriendList.empty())
+    {
+        for (User &user: g_currentUserFriendList)
+        {
+            std::cout << user.getId() << " " << user.getName() << " " << user.getState() << std::endl;
+        }
+    }
+    std::cout << "----------------------group list----------------------" << std::endl;
+    if (!g_currentUserGroupList.empty())
+    {
+        for (Group &group: g_currentUserGroupList)
+        {
+            std::cout << group.getId() << " " << group.getName() << " " << group.getDesc() << std::endl;
+            for (GroupUser &user: group.getUser())
+            {
+                std::cout << user.getId() << " " << user.getName() << " " << user.getState()
+                          << " " << user.getRole() << std::endl;
+            }
+        }
+    }
+    std::cout << "======================================================" << std::endl;
 }
+
 
 void readTaskHandler(int clientfd)
 {
@@ -241,9 +265,10 @@ std::string getCurrentTime()
 void mainMenu(int clientfd)
 {
     help();
+    char buffer[1024]{0};
     for (;;)
     {
-        char buffer[1024]{0};
+        std::cin.getline(buffer,1024);
         std::string commandBuf(buffer);
         std::string command;
         int idx = commandBuf.find(":");
@@ -267,7 +292,7 @@ void mainMenu(int clientfd)
 
 void help(int, std::string)
 {
-    std::cout << "show command list" << std::endl;
+    std::cout << "show command list >>>" << std::endl;
     for (auto &[k, v]: commandMap)
     {
         std::cout << k << ":" << v << std::endl;
