@@ -111,9 +111,9 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
                 json js;
                 for (auto &i: userVec)
                 {
-                    js["id"] = user.getId();
-                    js["name"] = user.getName();
-                    js["state"] = user.getState();
+                    js["id"] = i.getId();
+                    js["name"] = i.getName();
+                    js["state"] = i.getState();
                     vec2.push_back(js.dump());
                 }
                 response["friends"] = vec2;

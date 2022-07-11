@@ -1,4 +1,5 @@
 aux_source_directory(. SERVER_SRC)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-O2")
 add_executable(chatserver ${SERVER_SRC})
 target_link_libraries(chatserver muduo_net muduo_base mariadbclient pthread)

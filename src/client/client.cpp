@@ -92,6 +92,7 @@ int main(int argc, char **argv)
                                     user.setName(js["name"].get<std::string>());
                                     user.setState(js["state"].get<std::string>());
                                     g_currentUserFriendList.push_back(user);
+                                    std::cout << js.dump() << std::endl;
                                 }
                             }
                             // 记录当前用户群组信息
