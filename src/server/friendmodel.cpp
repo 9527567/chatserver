@@ -36,7 +36,7 @@ std::vector<User> FriendModel::query(int userid)
                 User user;
                 user.setId(atoi(row[0]));
                 user.setName(row[1]);
-                user.setState(row[3]);
+                user.setState(row[2]);
                 vec.push_back(user);
             }
             mysql_free_result(res);
