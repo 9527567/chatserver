@@ -129,10 +129,18 @@ int main(int argc, char **argv)
                                 for (std::string &str: vec)
                                 {
                                     json js = json::parse(str);
-                                    // time +[id] + name +"said:"+xxx
-                                    std::cout << js["time"] << "[" << js["id"] << "]" << js["name"] << "said"
-                                              << js["msg"]
-                                              << std::endl;
+                                    if (static_cast<int>(EnMsgType::ONE_CHAT_MSG) == js["msgid"].get<int>())
+                                    {
+                                        // time +[id] + name +"said:"+xxx
+                                        std::cout << js["time"] << "[" << js["id"] << "]" << js["name"] << "said"
+                                                  << js["msg"] << std::endl;
+                                    } else
+                                    {
+                                        std::cout << "群消息[" << js["groupid"] << js["time"].get<std::string>() << "]" << "[" << js["id"] << "]"
+                                                  << js["name"].get<std::string>()
+                                                  << "said:" << js["msg"].get<std::string>() << std::endl;
+                                    }
+
                                 }
                             }
                             //登录成功，启动接收线程负责接收数据
@@ -247,6 +255,12 @@ void readTaskHandler(int clientfd)
             std::cout << js["time"].get<std::string>() << "[" << js["id"] << "]" << js["name"].get<std::string>()
                       << "said:" << js["msg"].get<std::string>() << std::endl;
             continue;
+        } else if (static_cast<int>(EnMsgType::GROUP_CHAT_MSG) == js["msgid"].get<int>())
+        {
+            std::cout << "群消息[" << js["groupid"] << js["time"].get<std::string>() << "]" << "[" << js["id"] << "]"
+                      << js["name"].get<std::string>()
+                      << "said:" << js["msg"].get<std::string>() << std::endl;
+            continue;
         }
     }
 }
@@ -269,7 +283,7 @@ void mainMenu(int clientfd)
     char buffer[1024]{0};
     for (;;)
     {
-        std::cin.getline(buffer,1024);
+        std::cin.getline(buffer, 1024);
         std::string commandBuf(buffer);
         std::string command;
         int idx = commandBuf.find(":");
@@ -351,6 +365,7 @@ void creategroup(int clientfd, std::string str)
     std::string groupname = str.substr(0, idx);
     std::string groupdesc = str.substr(idx + 1, str.size() - idx);
     json js;
+    js["msgid"] = EnMsgType::CREATE_GROUP_MSG;
     js["id"] = g_currentUser.getId();
     js["groupname"] = groupname;
     js["groupdesc"] = groupdesc;
@@ -367,6 +382,7 @@ void addgroup(int clientfd, std::string str)
 {
     int groupid = atoi(str.c_str());
     json js;
+    js["msgid"] = EnMsgType::ADD_GROUP_MSG;
     js["id"] = g_currentUser.getId();
     js["groupid"] = groupid;
     std::string buffer = js.dump();
@@ -387,9 +403,12 @@ void groupchat(int clientfd, std::string str)
     int groupid = atoi(str.substr(0, idx).c_str());
     std::string message = str.substr(idx + 1, str.size() - idx);
     json js;
+    js["msgid"] = EnMsgType::GROUP_CHAT_MSG;
     js["id"] = g_currentUser.getId();
+    js["name"] = g_currentUser.getName();
     js["groupid"] = groupid;
     js["message"] = message;
+    js["time"] = getCurrentTime();
     std::string buffer = js.dump();
     int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
     if (-1 == len)
