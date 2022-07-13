@@ -145,6 +145,7 @@ int main(int argc, char **argv)
                             }
                             //登录成功，启动接收线程负责接收数据,该线程只启动一次
                             static int readThreadNumber = 0;
+                            if (readThreadNumber == 0)
                             {
                                 std::thread readTask(readTaskHandler, clinetfd);
                                 readTask.detach();
@@ -248,7 +249,7 @@ void readTaskHandler(int clientfd)
     {
         char buffer[1024]{0};
         int len = recv(clientfd, buffer, 1024, 0);
-        if (-1 != len || 0 == len)
+        if (-1 == len||0==len)
         {
             close(clientfd);
             exit(-1);
@@ -258,13 +259,13 @@ void readTaskHandler(int clientfd)
         if (static_cast<int>(EnMsgType::ONE_CHAT_MSG) == js["msgid"].get<int>())
         {
             std::cout << js["time"].get<std::string>() << "[" << js["id"] << "]" << js["name"].get<std::string>()
-                      << "said:" << js["msg"].get<std::string>() << std::endl;
+                      << " said:" << js["msg"].get<std::string>() << std::endl;
             continue;
         } else if (static_cast<int>(EnMsgType::GROUP_CHAT_MSG) == js["msgid"].get<int>())
         {
-            std::cout << "群消息[" << js["groupid"] << js["time"].get<std::string>() << "]" << "[" << js["id"] << "]"
+            std::cout << "群消息[" << js["groupid"] <<"] " << "["<< js["time"].get<std::string>() << "]" << "[" << js["id"] << "]"
                       << js["name"].get<std::string>()
-                      << "said:" << js["msg"].get<std::string>() << std::endl;
+                      << " said:" << js["msg"].get<std::string>() << std::endl;
             continue;
         }
     }
@@ -286,7 +287,7 @@ void mainMenu(int clientfd)
 {
     help();
     char buffer[1024]{0};
-    while(isMainMenuRunning)
+    while (isMainMenuRunning)
     {
         std::cin.getline(buffer, 1024);
         std::string commandBuf(buffer);
@@ -432,7 +433,7 @@ void loginout(int clientfd, std::string)
     if (-1 == len)
     {
         std::cerr << "send gorupchat msg error->" << buffer << std::endl;
-    }else
+    } else
     {
         g_currentUserGroupList.clear();
         g_currentUserFriendList.clear();
