@@ -22,6 +22,9 @@ ChatService::ChatService()
     _msgHandlerMap.insert({static_cast<int>(EnMsgType::LOGIN_MSG),
                            std::bind(&ChatService::login, this, std::placeholders::_1, std::placeholders::_2,
                                      std::placeholders::_3)});
+    _msgHandlerMap.insert({static_cast<int>(EnMsgType::LOGIN_OUT_MSG),
+                           std::bind(&ChatService::loginout, this, std::placeholders::_1, std::placeholders::_2,
+                                     std::placeholders::_3)});
     _msgHandlerMap.insert({static_cast<int>(EnMsgType::REG_MSG),
                            std::bind(&ChatService::regiseter, this, std::placeholders::_1, std::placeholders::_2,
                                      std::placeholders::_3)});
@@ -181,6 +184,21 @@ void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, 
     }
 }
 
+void ChatService::loginout(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
+{
+    int userid = js["id"].get<int>();
+    {
+        std::lock_guard<std::mutex> lock(_connMutex);
+        auto it = _userConnMap.find(userid);
+        if (it !=_userConnMap.end())
+        {
+            _userConnMap.erase(it);
+        }
+    }
+    // 更新用户状态信息
+    User user {userid,"","","offline"};
+    _userModel.updateState(user);
+}
 void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
 {
     User user;
@@ -276,3 +294,5 @@ void ChatService::groupChat(const muduo::net::TcpConnectionPtr &conn, json &js, 
         }
     }
 }
+
+

@@ -92,7 +92,6 @@ int main(int argc, char **argv)
                                     user.setName(js["name"].get<std::string>());
                                     user.setState(js["state"].get<std::string>());
                                     g_currentUserFriendList.push_back(user);
-                                    std::cout << js.dump() << std::endl;
                                 }
                             }
                             // 记录当前用户群组信息
@@ -136,16 +135,22 @@ int main(int argc, char **argv)
                                                   << js["msg"] << std::endl;
                                     } else
                                     {
-                                        std::cout << "群消息[" << js["groupid"] << js["time"].get<std::string>() << "]" << "[" << js["id"] << "]"
+                                        std::cout << "群消息[" << js["groupid"] << js["time"].get<std::string>() << "]"
+                                                  << "[" << js["id"] << "]"
                                                   << js["name"].get<std::string>()
                                                   << "said:" << js["msg"].get<std::string>() << std::endl;
                                     }
 
                                 }
                             }
-                            //登录成功，启动接收线程负责接收数据
-                            std::thread readTask(readTaskHandler, clinetfd);
-                            readTask.detach();
+                            //登录成功，启动接收线程负责接收数据,该线程只启动一次
+                            static int readThreadNumber = 0;
+                            {
+                                std::thread readTask(readTaskHandler, clinetfd);
+                                readTask.detach();
+                                readThreadNumber++;
+                            }
+                            isMainMenuRunning = true;
                             // 进入聊天主页面
                             mainMenu(clinetfd);
                         }
@@ -281,7 +286,7 @@ void mainMenu(int clientfd)
 {
     help();
     char buffer[1024]{0};
-    for (;;)
+    while(isMainMenuRunning)
     {
         std::cin.getline(buffer, 1024);
         std::string commandBuf(buffer);
@@ -417,5 +422,20 @@ void groupchat(int clientfd, std::string str)
     }
 }
 
-void loginout(int, std::string)
-{}
+void loginout(int clientfd, std::string)
+{
+    json js;
+    js["msgid"] = EnMsgType::LOGIN_OUT_MSG;
+    js["id"] = g_currentUser.getId();
+    std::string buffer = js.dump();
+    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
+    if (-1 == len)
+    {
+        std::cerr << "send gorupchat msg error->" << buffer << std::endl;
+    }else
+    {
+        g_currentUserGroupList.clear();
+        g_currentUserFriendList.clear();
+        isMainMenuRunning = false;
+    }
+}

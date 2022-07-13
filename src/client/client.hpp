@@ -32,6 +32,9 @@ std::vector<User> g_currentUserFriendList;
 // 记录当前登录成功用户的基本信息
 std::vector<Group> g_currentUserGroupList;
 // 显示当前登录成功用户的基本信息
+void showCurrentUserData();
+// 控制聊天页面程序
+bool isMainMenuRunning{false};
 // 系统支持的客户端命令列表,是命令而不是命令行参数
 std::unordered_map<std::string ,std::string > commandMap  {
         {"help","显示所有的命令，格式help"},
@@ -60,7 +63,7 @@ std::unordered_map<std::string,std::function<void(int,std::string)>> commandHand
         {"loginout",loginout},
 };
 
-void showCurrentUserData();
+
 // 接收线程
 void readTaskHandler(int clientfd);
 // 获取时间

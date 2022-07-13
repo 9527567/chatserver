@@ -41,6 +41,8 @@ public:
     static ChatService* instance();
     // 登录业务
     void login(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 注销业务
+    void loginout(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
     //注册业务
     void regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
     // 一对一聊天业务
