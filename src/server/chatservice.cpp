@@ -226,14 +226,13 @@ void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
 
 void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
 {
-    int toid = js["toid"];
+    int toid = js["toid"].get<int>();
     {
         std::lock_guard<std::mutex> lock(_connMutex);
         auto it = _userConnMap.find(toid);
         if (it != _userConnMap.end())
         {
-            // toid 不在线
-            // 回调函数对象
+            // 在线
             it->second->send(js.dump());
             return;
         }

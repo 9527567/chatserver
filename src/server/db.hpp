@@ -10,7 +10,7 @@
 #include <string>
 
 // 数据库配置信息
-static std::string server = "172.29.192.1";
+static std::string server = "172.18.128.1";
 static std::string user = "root";
 static std::string password = "qdu321";
 static std::string dbname = "chat";
