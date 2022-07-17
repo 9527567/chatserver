@@ -14,6 +14,7 @@
 #include "offlinemessagemodel.hpp"
 #include "friendmodel.hpp"
 #include "groupmodel.hpp"
+#include "redis.hpp"
 
 using json = nlohmann::json;
 //表示处理消息的事件回调方法类型
@@ -36,6 +37,7 @@ private:
     // 好友信息操作类
     FriendModel _friendmodel;
     GroupModel _groupModel;
+    Redis _redis;
     ChatService();
 public:
     static ChatService* instance();
@@ -61,6 +63,8 @@ public:
     void groupChat(const muduo::net::TcpConnectionPtr &conn,json &js,muduo::Timestamp time);
     // 服务器异常，业务重置方法
     void reset();
+    // 从redis获取订阅消息
+    void handleRedisSubscribeMessage(int, const std::string&);
 };
 
 #endif //MYMUDUO_CHATSERVICE_HPP

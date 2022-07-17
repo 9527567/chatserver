@@ -42,8 +42,7 @@ public:
             //从MySQL拉下来的数据进行转换编码，显示中文。
             mysql_query(_conn, "set names gbk");
             LOG_INFO << "MySQL connect success!";
-        }
-        else
+        } else
         {
             LOG_INFO << "MySQL connect failed!";
         }
@@ -51,7 +50,7 @@ public:
     }
 
 // 更新操作
-    bool update(std::string sql)
+    bool update(const std::string &sql)
     {
         if (mysql_query(_conn, sql.c_str()))
         {
@@ -63,7 +62,7 @@ public:
     }
 
 // 查询操作
-    MYSQL_RES *query(std::string sql)
+    MYSQL_RES *query(const std::string &sql)
     {
         if (mysql_query(_conn, sql.c_str()))
         {
@@ -73,11 +72,13 @@ public:
         }
         return mysql_use_result(_conn);
     }
+
     // 返回MySQL链接
-    auto* getConnection()
+    auto *getConnection()
     {
         return _conn;
     }
+
 private:
     MYSQL *_conn;
 };

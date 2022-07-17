@@ -6,6 +6,7 @@
 #define MYMUDUO_USER_HPP
 
 #include <string>
+#include <utility>
 
 //user表的orm类，映射user表的数据结构类
 class User
@@ -16,35 +17,35 @@ private:
     std::string password;
     std::string state;
 public:
-    User(int _id = -1, std::string _name = "", std::string _password = "", std::string _state = "offline") : id(_id),
-                                                                                                             name(_name),
-                                                                                                             password(
-                                                                                                                     _password),
-                                                                                                             state(_state)
+    explicit User(int _id = -1, std::string _name = "", std::string _password = "", std::string _state = "offline") : id(_id),
+                                                                                                             name(std::move(_name)),
+                                                                                                             password(std::move(
+                                                                                                                     _password)),
+                                                                                                             state(std::move(_state))
     {}
 
     void setId(int id)
     { this->id = id; }
 
     void setName(std::string name)
-    { this->name = name; }
+    { this->name = std::move(name); }
 
     void setPassword(std::string password)
-    { this->password = password; }
+    { this->password = std::move(password); }
 
     void setState(std::string state)
-    { this->state = state; }
+    { this->state = std::move(state); }
 
-    int getId()
+    [[nodiscard]] int getId() const
     { return this->id; }
 
-    std::string getName()
+    [[nodiscard]] std::string getName() const
     { return this->name; }
 
-    std::string getPassword()
+    [[nodiscard]] std::string getPassword() const
     { return this->password; }
 
-    std::string getState()
+    [[nodiscard]] std::string getState() const
     { return this->state; }
 };
 

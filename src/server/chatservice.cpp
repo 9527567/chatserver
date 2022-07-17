@@ -47,6 +47,10 @@ ChatService::ChatService()
                                     std::bind(&ChatService::groupChat, this, std::placeholders::_1,
                                               std::placeholders::_2,
                                               std::placeholders::_3)));
+    if (_redis.connect())
+        _redis.init_notify_handler(std::bind(&ChatService::handleRedisSubscribeMessage, this, std::placeholders::_1,
+                                             std::placeholders::_2
+        ));
 
 }
 
@@ -190,15 +194,16 @@ void ChatService::loginout(const muduo::net::TcpConnectionPtr &conn, json &js, m
     {
         std::lock_guard<std::mutex> lock(_connMutex);
         auto it = _userConnMap.find(userid);
-        if (it !=_userConnMap.end())
+        if (it != _userConnMap.end())
         {
             _userConnMap.erase(it);
         }
     }
     // 更新用户状态信息
-    User user {userid,"","","offline"};
+    User user{userid, "", "", "offline"};
     _userModel.updateState(user);
 }
+
 void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
 {
     User user;
@@ -292,6 +297,20 @@ void ChatService::groupChat(const muduo::net::TcpConnectionPtr &conn, json &js, 
             _offlinemsgmodel.insert(id, js.dump());
         }
     }
+}
+
+void ChatService::handleRedisSubscribeMessage(int userid, const std::string &msg)
+{
+    std::lock_guard<std::mutex> lock(_connMutex);
+    auto it = _userConnMap.find(userid);
+    if (it != _userConnMap.end())
+    {
+        it->second->send(msg);
+        return;
+    }
+
+    // 存储该用户的离线消息
+    _offlinemsgmodel.insert(userid, msg);
 }
 
 
