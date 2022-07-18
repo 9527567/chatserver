@@ -17,7 +17,7 @@ ChatService *ChatService::instance()
 //注册回调
 ChatService::ChatService()
 {
-    // 搞清楚这里到底是什么意思。this指向的谁？
+    // 搞清楚这里到底是什么意思。this指向的谁？调用该成员函数对象的地址
     // 在执行任何成员函数时，该成员函数都会自动包含一个隐藏的指针，称为this指针。
     _msgHandlerMap.insert({static_cast<int>(EnMsgType::LOGIN_MSG),
                            std::bind(&ChatService::login, this, std::placeholders::_1, std::placeholders::_2,
@@ -49,9 +49,7 @@ ChatService::ChatService()
                                               std::placeholders::_3)));
     if (_redis.connect())
         _redis.init_notify_handler(std::bind(&ChatService::handleRedisSubscribeMessage, this, std::placeholders::_1,
-                                             std::placeholders::_2
-        ));
-
+                                             std::placeholders::_2));
 }
 
 
@@ -94,7 +92,8 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
                 std::lock_guard<std::mutex> lock(_connMutex);
                 _userConnMap.insert(std::pair<int, muduo::net::TcpConnectionPtr>(user.getId(), conn));
             }
-
+            // 登录成功，向redis订阅channel(id)
+            _redis.subscribe(id);
             //登录成功，更新用户状态
             user.setState("online");
             _userModel.updateState(user);
@@ -200,6 +199,7 @@ void ChatService::loginout(const muduo::net::TcpConnectionPtr &conn, json &js, m
         }
     }
     // 更新用户状态信息
+    _redis.unsubscribe(userid);
     User user{userid, "", "", "offline"};
     _userModel.updateState(user);
 }
@@ -215,13 +215,12 @@ void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
             if (it->second == conn)
             {
                 user.setId(it->first);
-                std::cout << user.getId() << std::endl;
-
                 _userConnMap.erase(it);
                 break;
             }
         }
     }
+    _redis.unsubscribe(user.getId());
     if (user.getId() != -1)
     {
         user.setState("offline");
@@ -232,6 +231,7 @@ void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
 void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
 {
     int toid = js["toid"].get<int>();
+    // 在同一台主机登录
     {
         std::lock_guard<std::mutex> lock(_connMutex);
         auto it = _userConnMap.find(toid);
@@ -241,6 +241,13 @@ void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, mu
             it->second->send(js.dump());
             return;
         }
+    }
+    // 查询是否在其他主机上登录
+    User user = _userModel.query(toid);
+    if (user.getState() == "online")
+    {
+        _redis.publish(toid, js.dump());
+        return;
     }
     // 离线消息
     _offlinemsgmodel.insert(toid, js.dump());
@@ -294,7 +301,16 @@ void ChatService::groupChat(const muduo::net::TcpConnectionPtr &conn, json &js, 
             it->second->send(js.dump());
         } else
         {
-            _offlinemsgmodel.insert(id, js.dump());
+            // 查询toid是否在线
+            User user = _userModel.query(id);
+            if (user.getState() == "online")
+            {
+                _redis.publish(id, js.dump());
+            } else
+            {
+                // 存储离线消息
+                _offlinemsgmodel.insert(id, js.dump());
+            }
         }
     }
 }

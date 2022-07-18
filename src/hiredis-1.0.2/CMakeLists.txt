@@ -23,7 +23,7 @@ MESSAGE("Detected version: ${VERSION}")
 PROJECT(hiredis VERSION "${VERSION}")
 
 SET(ENABLE_EXAMPLES OFF CACHE BOOL "Enable building hiredis examples")
-
+SET(DISABLE_TESTS ON)
 SET(hiredis_sources
     alloc.c
     async.c
