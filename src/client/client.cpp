@@ -1,8 +1,6 @@
 #include "client.hpp"
 
-void doLoginResponse(json json);
 
-void doRegResponse(json);
 
 int main(int argc, char **argv)
 {
@@ -191,7 +189,7 @@ void readTaskHandler(int clientfd)
     }
 }
 
-void doRegResponse(json responsejs)
+void doRegResponse(const json &responsejs)
 {
     if (responsejs["errno"].get<int>() != 0)
     {
@@ -204,7 +202,7 @@ void doRegResponse(json responsejs)
 }
 
 // 处理登陆的响应逻辑
-void doLoginResponse(json &responsejs)
+void doLoginResponse(const json &responsejs)
 {
     if (responsejs["errno"].get<int>() != 0)//登录失败
     {

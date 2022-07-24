@@ -80,6 +80,9 @@ std::unordered_map<std::string, std::function<void(int, std::string)>> commandHa
         {"loginout",    loginout},
 };
 
+void doLoginResponse(const json &);
+
+void doRegResponse(const json &);
 
 // 接收线程
 void readTaskHandler(int clientfd);
