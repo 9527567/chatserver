@@ -10,7 +10,7 @@
 #include <string>
 
 // 数据库配置信息
-static std::string server = "172.18.128.1";
+static std::string server = "127.0.0.1";
 static std::string user = "root";
 static std::string password = "qdu321";
 static std::string dbname = "chat";
@@ -40,7 +40,7 @@ public:
         if (p != nullptr)
         {
             //从MySQL拉下来的数据进行转换编码，显示中文。
-            mysql_query(_conn, "set names gbk");
+            mysql_query(_conn, "set names utf8");
             LOG_INFO << "MySQL connect success!";
         } else
         {
