@@ -14,6 +14,17 @@
 安装mariadb，mariadb-client-dev
 ~~~bash
 sudo apt install mariadb-server libmariadb-dev mariadb-client
+sudo mysql
+set password for root@localhost = password('qdu321');
+flush privileges;
+source chat.sql;
+quit
 ~~~
 #### 使用
 需要启动mariadb服务，创建对应的数据库和表
+~~~bash
+#安装 redis
+sudo apt install redis
+/etc/init.d/redis-server start
+~~~
+
