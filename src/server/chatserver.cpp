@@ -6,6 +6,8 @@
 #include "nlohmann/json.hpp"
 #include "chatservice.hpp"
 #include <iostream>
+#include <ostream>
+#include "ChaoticStreamCipher.hpp"
 using json = nlohmann::json;
 
 //启动服务
@@ -48,8 +50,12 @@ void ChatServer::onMessage(const net::TcpConnectionPtr &conn, net::Buffer *buffe
 {
     // buffer缓冲区
     string buf = buffer->retrieveAllAsString();
+    ChaoticStreamCipher cipher{0.3,0.4};
+    buf = cipher.decrypt(buf);
+    // buf.pop_back();
     // 数据反序列化，完全解耦网络模块和业务模块的代码，通过回调函数的方式
     json js = json::parse(buf);
+
     auto msgHandler = ChatService::instance()->getHandler(js["msgid"].get<int>());
     // 回调消息绑定好的事件处理器，来执行相应的任务
     msgHandler(conn, js, time);

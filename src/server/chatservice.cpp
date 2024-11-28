@@ -6,6 +6,7 @@
 #include "muduo/base/Logging.h"
 #include <vector>
 #include <iostream>
+#include "ChaoticStreamCipher.hpp"
 
 // 获取单例对象的指针
 ChatService *ChatService::instance()
@@ -71,6 +72,7 @@ MsgHandler ChatService::getHandler(int msgid)
 
 void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
 {
+    ChaoticStreamCipher cipher{0.3,0.4};
     int id = js["id"];
     std::string pwd = js["password"];
     User user = _userModel.query(id);
@@ -84,7 +86,7 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
             response["msgid"] = EnMsgType::LOGIN_MSG_ACK;
             response["errno"] = 2;
             response["errmsg"] = "该账户已登录";
-            conn->send(response.dump());
+            conn->send(cipher.encrypt(response.dump()));
         } else
         {
             //登录成功，记录用户信息，stl标准库没有考虑线程安全问题,使用mutex对map加锁
@@ -150,7 +152,9 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
                     groupV.push_back(grpjson.dump());
                 }
             }
-            conn->send(response.dump());
+            conn->send(cipher.encrypt(response.dump()));
+            std::cout << "+++" << response.dump() << "+++"<< std::endl;
+
         }
     } else
     {
@@ -158,12 +162,13 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js, mudu
         response["msgid"] = EnMsgType::LOGIN_MSG_ACK;
         response["errno"] = 1;
         response["errmsg"] = "用户名或者密码错误";
-        conn->send(response.dump());
+        conn->send(cipher.encrypt(response.dump()));
     }
 }
 
 void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
 {
+    ChaoticStreamCipher cipher{0.3, 0.4};
     std::string name = js["name"];
     std::string pwd = js["password"];
     User user;
@@ -176,14 +181,14 @@ void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, 
         response["msgid"] = EnMsgType::REG_MSG_ACK;
         response["errno"] = 0;
         response["id"] = user.getId();
-        conn->send(response.dump());
+        conn->send(cipher.encrypt(response.dump()));
     } else
     {
         json response;
         response["msgid"] = EnMsgType::REG_MSG_ACK;
         response["errno"] = 1;
         response["errmsg"] = 1;
-        conn->send(response.dump());
+        conn->send(cipher.encrypt(response.dump()));
     }
 }
 
@@ -230,6 +235,7 @@ void ChatService::clientCloseException(const muduo::net::TcpConnectionPtr &conn)
 
 void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
 {
+    ChaoticStreamCipher cipher{0.3, 0.4};
     int toid = js["toid"].get<int>();
     // 在同一台主机登录
     {
@@ -238,7 +244,7 @@ void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, mu
         if (it != _userConnMap.end())
         {
             // 在线
-            it->second->send(js.dump());
+            it->second->send(cipher.encrypt(js.dump()));
             return;
         }
     }
@@ -246,7 +252,7 @@ void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, mu
     User user = _userModel.query(toid);
     if (user.getState() == "online")
     {
-        _redis.publish(toid, js.dump());
+        _redis.publish(toid, cipher.encrypt(js.dump()));
         return;
     }
     // 离线消息
@@ -289,6 +295,7 @@ void ChatService::addGroup(const muduo::net::TcpConnectionPtr &conn, json &js, m
 
 void ChatService::groupChat(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time)
 {
+    ChaoticStreamCipher cipher{0.3, 0.4};
     int userid = js["id"].get<int>();
     int groupid = js["groupid"].get<int>();
     std::vector<int> useridVec = _groupModel.queryGroupUsers(userid, groupid);
@@ -298,18 +305,18 @@ void ChatService::groupChat(const muduo::net::TcpConnectionPtr &conn, json &js, 
         auto it = _userConnMap.find(id);
         if (it != _userConnMap.end())
         {
-            it->second->send(js.dump());
+            it->second->send(cipher.encrypt(js.dump()));
         } else
         {
             // 查询toid是否在线
             User user = _userModel.query(id);
             if (user.getState() == "online")
             {
-                _redis.publish(id, js.dump());
+                _redis.publish(id, cipher.encrypt(js.dump()));
             } else
             {
                 // 存储离线消息
-                _offlinemsgmodel.insert(id, js.dump());
+                _offlinemsgmodel.insert(id, cipher.encrypt(js.dump()));
             }
         }
     }
@@ -317,11 +324,12 @@ void ChatService::groupChat(const muduo::net::TcpConnectionPtr &conn, json &js, 
 
 void ChatService::handleRedisSubscribeMessage(int userid, const std::string &msg)
 {
+    ChaoticStreamCipher cipher{0.3, 0.4};
     std::lock_guard<std::mutex> lock(_connMutex);
     auto it = _userConnMap.find(userid);
     if (it != _userConnMap.end())
     {
-        it->second->send(msg);
+        it->second->send(cipher.encrypt(msg));
         return;
     }
 

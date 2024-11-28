@@ -1,9 +1,13 @@
 #include "client.hpp"
-
+#include "ChaoticStreamCipher.hpp"
+#include <cassert>
+#include <cstdlib>
+#include <ostream>
 //client
 
 int main(int argc, char **argv)
 {
+    ChaoticStreamCipher cipher{0.3,0.4};
     if (argc < 3)
     {
         std::cerr << "command invalid! example ./chatClient 127.0.0.1 6000" << std::endl;
@@ -64,14 +68,13 @@ int main(int argc, char **argv)
                 js["msgid"] = static_cast<int>(EnMsgType::LOGIN_MSG);
                 js["id"] = id;
                 js["password"] = pwd;
-                std::string request = js.dump();
-
+                std::string request = cipher.encrypt(js.dump());
                 g_isLoginSuccess = false;
-                int len = send(clinetfd, request.c_str(), strlen(request.c_str()) + 1, 0);
+                int len = send(clinetfd, request.c_str(), strlen(request.c_str()), 0);
                 if (len == -1)
                 {
                     std::cerr << "send login msg error:" << request << std::endl;
-                }
+                }        
                 sem_wait(&rwsem);
                 if (g_isLoginSuccess)
                 {
@@ -95,8 +98,8 @@ int main(int argc, char **argv)
                 js["msgid"] = static_cast<int>(EnMsgType::REG_MSG);
                 js["name"] = name;
                 js["password"] = pwd;
-                std::string request = js.dump();
-                int len = send(clinetfd, request.c_str(), strlen(request.c_str()) + 1, 0);
+                std::string request = cipher.encrypt(js.dump());
+                int len = send(clinetfd, request.c_str(), strlen(request.c_str()), 0);
                 if (len == -1)
                 {
                     std::cerr << "send reg msg error" << request << std::endl;
@@ -154,7 +157,7 @@ void readTaskHandler(int clientfd)
 {
     for (;;)
     {
-        char buffer[1024]{0};
+        char buffer[1024]={0};
         int len = recv(clientfd, buffer, 1024, 0);
         if (-1 == len || 0 == len)
         {
@@ -162,7 +165,12 @@ void readTaskHandler(int clientfd)
             exit(-1);
         }
         // 接收charserver转发的数据，反序列化输出
-        json js = json::parse(buffer);
+        ChaoticStreamCipher cipher{0.3,0.4};
+        auto buf = cipher.decrypt(buffer);
+
+        std::cout <<"+++" << buffer << "+++" << std::endl;
+        json js = json::parse(buf);
+        std::cout << js << std::endl;
         if (static_cast<int>(EnMsgType::ONE_CHAT_MSG) == js["msgid"].get<int>())
         {
             std::cout << js["time"].get<std::string>() << "[" << js["id"] << "]" << js["name"].get<std::string>()
@@ -203,7 +211,7 @@ void doRegResponse(const json &responsejs)
 
 // 处理登陆的响应逻辑
 void doLoginResponse(const json &responsejs)
-{
+{    
     if (responsejs["errno"].get<int>() != 0)//登录失败
     {
         std::cerr << responsejs["errmsg"] << std::endl;
@@ -331,6 +339,7 @@ void help(int, std::string)
 
 void chat(int clientfd, std::string str)
 {
+    ChaoticStreamCipher cipher{0.3,0.4};
     int idx = str.find(":");
     if (-1 == idx)
     {
@@ -346,8 +355,8 @@ void chat(int clientfd, std::string str)
     js["toid"] = friendid;
     js["msg"] = message;
     js["time"] = getCurrentTime();
-    std::string buffer = js.dump();
-    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()) + 1, 0);
+    std::string buffer = cipher.encrypt(js.dump());
+    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
     if (-1 == len)
     {
         std::cerr << "send char msg error ->" << buffer << std::endl;
@@ -356,13 +365,14 @@ void chat(int clientfd, std::string str)
 
 void addfriend(int clientfd, std::string str)
 {
+    ChaoticStreamCipher cipher{0.3, 0.4};
     int friendid = atoi(str.c_str());
     json js;
     js["msgid"] = EnMsgType::ADD_FRIEND_MSG;
     js["id"] = g_currentUser.getId();
     js["friendid"] = friendid;
-    std::string buffer = js.dump();
-    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()) + 1, 0);
+    std::string buffer = cipher.encrypt(js.dump());
+    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
     if (-1 == len)
     {
         std::cerr << "send addfriend msg error ->" << buffer << std::endl;
@@ -371,6 +381,7 @@ void addfriend(int clientfd, std::string str)
 
 void creategroup(int clientfd, std::string str)
 {
+    ChaoticStreamCipher cipher{0.3,0.4};
     int idx = str.find(":");
     if (-1 == idx)
     {
@@ -383,7 +394,7 @@ void creategroup(int clientfd, std::string str)
     js["id"] = g_currentUser.getId();
     js["groupname"] = groupname;
     js["groupdesc"] = groupdesc;
-    std::string buffer = js.dump();
+    std::string buffer = cipher.encrypt(js.dump());
     int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
     if (-1 == len)
     {
@@ -394,12 +405,13 @@ void creategroup(int clientfd, std::string str)
 
 void addgroup(int clientfd, std::string str)
 {
+    ChaoticStreamCipher cipher{0.3, 0.4};
     int groupid = atoi(str.c_str());
     json js;
     js["msgid"] = EnMsgType::ADD_GROUP_MSG;
     js["id"] = g_currentUser.getId();
     js["groupid"] = groupid;
-    std::string buffer = js.dump();
+    std::string buffer = cipher.encrypt(js.dump());
     int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
     if (-1 == len)
     {
@@ -409,6 +421,7 @@ void addgroup(int clientfd, std::string str)
 
 void groupchat(int clientfd, std::string str)
 {
+    ChaoticStreamCipher cipher{0.3, 0.4};
     int idx = str.find(":");
     if (-1 == idx)
     {
@@ -423,7 +436,7 @@ void groupchat(int clientfd, std::string str)
     js["groupid"] = groupid;
     js["message"] = message;
     js["time"] = getCurrentTime();
-    std::string buffer = js.dump();
+    std::string buffer = cipher.encrypt(js.dump());
     int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
     if (-1 == len)
     {
@@ -433,10 +446,11 @@ void groupchat(int clientfd, std::string str)
 
 void loginout(int clientfd, std::string)
 {
+    ChaoticStreamCipher cipher{0.3,0.4};
     json js;
     js["msgid"] = EnMsgType::LOGIN_OUT_MSG;
     js["id"] = g_currentUser.getId();
-    std::string buffer = js.dump();
+    std::string buffer = cipher.encrypt(js.dump());
     int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()), 0);
     if (-1 == len)
     {

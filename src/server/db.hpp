@@ -5,6 +5,7 @@
 #ifndef MYMUDUO_MYSQL_HPP
 #define MYMUDUO_MYSQL_HPP
 
+#include <cstdio>
 #include <mariadb/mysql.h>
 #include "muduo/base/Logging.h"
 #include <string>
@@ -40,7 +41,7 @@ public:
         if (p != nullptr)
         {
             //从MySQL拉下来的数据进行转换编码，显示中文。
-            mysql_query(_conn, "set names utf8");
+            mysql_query(_conn, "set names gbk");
             LOG_INFO << "MySQL connect success!";
         } else
         {
