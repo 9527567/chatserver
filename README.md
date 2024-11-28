@@ -12,9 +12,26 @@
 
 #### 编译
 安装mariadb，mariadb-client-dev
-设置 `utf-8mb4` 编码
 ~~~bash
 sudo apt install mariadb-server libmariadb-dev mariadb-client
+~~~
+设置 `utf-8mb4` 编码 
+
+`vim /etc/my.cnf`
+~~~conf
+[client]
+default-character-set = utf8mb4
+
+[mysql]
+default-character-set = utf8mb4
+
+[mysqld]
+character-set-client-handshake = FALSE
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+~~~
+`sudo systemctl restart mariadb`
+~~~bash
 sudo mysql
 set password for root@localhost = password('qdu321');
 flush privileges;
