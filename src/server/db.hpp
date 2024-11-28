@@ -41,7 +41,7 @@ public:
         if (p != nullptr)
         {
             //从MySQL拉下来的数据进行转换编码，显示中文。
-            mysql_query(_conn, "set names gbk");
+            mysql_query(_conn, "set names utf8mb4");
             LOG_INFO << "MySQL connect success!";
         } else
         {

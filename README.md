@@ -12,6 +12,7 @@
 
 #### 编译
 安装mariadb，mariadb-client-dev
+设置 `utf-8mb4` 编码
 ~~~bash
 sudo apt install mariadb-server libmariadb-dev mariadb-client
 sudo mysql
