@@ -24,7 +24,7 @@ bool GroupModel::createGroup(Group &group)
 bool GroupModel::addGroup(int userid, int groupid, std::string role)
 {
     char sql[1024] = {0};
-    sprintf(sql, "insert into groupuser valses(%d,%d,'%s')", groupid, userid, role.c_str());
+    sprintf(sql, "insert into groupuser (groupid, userid, grouprole) VALUES (%d,%d,'%s')", groupid, userid, role.c_str());
     MySQL mysql;
     if (mysql.connect())
     {

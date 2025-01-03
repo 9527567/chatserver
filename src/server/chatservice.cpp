@@ -75,7 +75,7 @@ MsgHandler ChatService::getHandler(int msgid) {
 void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js,
                         muduo::Timestamp time) {
   ChaoticStreamCipher cipher{0.3, 0.4};
-  int id = js["id"];
+  int id = js["id"].get<int>();
   std::string pwd = js["password"];
   User user = _userModel.query(id);
   if (user.getId() == id && user.getPassword() == pwd) {
@@ -279,6 +279,7 @@ void ChatService::oneChat(const muduo::net::TcpConnectionPtr &conn, json &js,
       memcpy(message, buffer, 4);            // 将长度复制到message
       memcpy(message + 4, msg.c_str(), len); // 将消息内容复制到message
       it->second->send(message, len + 4);
+      delete[] message;
       return;
     }
   }
@@ -366,7 +367,7 @@ void ChatService::handleRedisSubscribeMessage(int userid,
     memcpy(buffer, &len, sizeof(len));
 
     char *message = new char[4 + len];
-    memcpy(message, buffer, 4);            // 将长度复制到message
+    memcpy(message, buffer, 4);             // 将长度复制到message
     memcpy(message + 4, msg_.c_str(), len); // 将消息内容复制到message
     it->second->send(message, len + 4);
     return;
