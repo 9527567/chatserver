@@ -5,7 +5,8 @@
 #include "ChaoticStreamCipher.hpp"
 #include "muduo/base/Logging.h"
 #include "public.hpp"
-#include <filesystem>
+#include "server/user.hpp"
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -96,6 +97,7 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js,
       memcpy(message + 4, msg.c_str(), len); // 将消息内容复制到message
 
       conn->send(message, len + 4);
+      delete[] message;
     } else {
       // 登录成功，记录用户信息，stl标准库没有考虑线程安全问题,使用mutex对map加锁
       {
@@ -165,6 +167,7 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js,
       memcpy(message + 4, msg.c_str(), len); // 将消息内容复制到message
       conn->send(message, len + 4);
       std::cout << "+++" << response.dump() << "+++" << std::endl;
+      delete[] message;
     }
   } else {
     json response;
@@ -180,6 +183,7 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js,
     memcpy(message, buffer, 4);            // 将长度复制到message
     memcpy(message + 4, msg.c_str(), len); // 将消息内容复制到message
     conn->send(message, len + 4);
+    delete[] message;
   }
 }
 
@@ -206,6 +210,7 @@ void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js,
     memcpy(message, buffer, 4);            // 将长度复制到message
     memcpy(message + 4, msg.c_str(), len); // 将消息内容复制到message
     conn->send(message, len + 4);
+    delete[] message;
   } else {
     json response;
     response["msgid"] = EnMsgType::REG_MSG_ACK;
@@ -220,6 +225,7 @@ void ChatService::regiseter(const muduo::net::TcpConnectionPtr &conn, json &js,
     memcpy(message, buffer, 4);            // 将长度复制到message
     memcpy(message + 4, msg.c_str(), len); // 将消息内容复制到message
     conn->send(message, len + 4);
+    delete[] message;
   }
 }
 
@@ -301,7 +307,13 @@ void ChatService::addFriend(const muduo::net::TcpConnectionPtr &conn, json &js,
                             muduo::Timestamp time) {
   int id = js["id"];
   int friendId = js["friendid"];
-  _friendmodel.insert(id, friendId);
+  // 查询是否添加好友
+  auto friendids = _friendmodel.query(id);
+  if (friendids.cend() ==
+      std::find_if(friendids.cbegin(), friendids.cend(),
+                   [=](User user) { return user.getId() == friendId; })) {
+    _friendmodel.insert(id, friendId);
+  }
   // 也可以添加响应
 }
 
@@ -320,7 +332,12 @@ void ChatService::addGroup(const muduo::net::TcpConnectionPtr &conn, json &js,
                            muduo::Timestamp time) {
   int userid = js["id"].get<int>();
   int groupid = js["groupid"].get<int>();
-  _groupModel.addGroup(userid, groupid, "normal");
+  // 查询是否已经加入
+  auto groupusers = _groupModel.queryGroupUsers(userid, groupid);
+  if (groupusers.cend() ==
+      std::find(groupusers.cbegin(), groupusers.cend(), userid)) {
+    _groupModel.addGroup(userid, groupid, "normal");
+  }
 }
 
 void ChatService::groupChat(const muduo::net::TcpConnectionPtr &conn, json &js,
@@ -342,6 +359,7 @@ void ChatService::groupChat(const muduo::net::TcpConnectionPtr &conn, json &js,
       memcpy(message, buffer, 4);            // 将长度复制到message
       memcpy(message + 4, msg.c_str(), len); // 将消息内容复制到message
       it->second->send(message, len + 4);
+      delete[] message;
     } else {
       // 查询toid是否在线
       User user = _userModel.query(id);
@@ -370,6 +388,7 @@ void ChatService::handleRedisSubscribeMessage(int userid,
     memcpy(message, buffer, 4);             // 将长度复制到message
     memcpy(message + 4, msg_.c_str(), len); // 将消息内容复制到message
     it->second->send(message, len + 4);
+    delete[] message;
     return;
   }
 

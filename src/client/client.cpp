@@ -72,7 +72,6 @@ int main(int argc, char **argv) {
       memcpy(message_s + 4, msg.c_str(), len); // 将消息内容复制到message
       g_isLoginSuccess = false;
       len = send(clientfd, message_s, len + 4, 0);
-
       if (len == -1) {
         std::cerr << "send login msg error:" << "login failed" << std::endl;
       }
