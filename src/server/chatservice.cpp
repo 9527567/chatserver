@@ -22,37 +22,61 @@ ChatService::ChatService() {
   // 搞清楚这里到底是什么意思。this指向的谁？调用该成员函数对象的地址
   // 在执行任何成员函数时，该成员函数都会自动包含一个隐藏的指针，称为this指针。
   _msgHandlerMap.insert(
-      {static_cast<int>(EnMsgType::LOGIN_MSG),
+      {static_cast<int>(EnMsgType::cmd_login),
        std::bind(&ChatService::login, this, std::placeholders::_1,
                  std::placeholders::_2, std::placeholders::_3)});
   _msgHandlerMap.insert(
-      {static_cast<int>(EnMsgType::LOGIN_OUT_MSG),
+      {static_cast<int>(EnMsgType::cmd_logout),
        std::bind(&ChatService::loginout, this, std::placeholders::_1,
                  std::placeholders::_2, std::placeholders::_3)});
   _msgHandlerMap.insert(
-      {static_cast<int>(EnMsgType::REG_MSG),
+      {static_cast<int>(EnMsgType::cmd_regist),
        std::bind(&ChatService::regiseter, this, std::placeholders::_1,
                  std::placeholders::_2, std::placeholders::_3)});
   _msgHandlerMap.insert(
-      std::pair(static_cast<int>(EnMsgType::ONE_CHAT_MSG),
+      std::pair(static_cast<int>(EnMsgType::cmd_friend_chat),
                 std::bind(&ChatService::oneChat, this, std::placeholders::_1,
                           std::placeholders::_2, std::placeholders::_3)));
-  _msgHandlerMap.insert(
-      std::pair(static_cast<int>(EnMsgType::ADD_FRIEND_MSG),
-                std::bind(&ChatService::addFriend, this, std::placeholders::_1,
-                          std::placeholders::_2, std::placeholders::_3)));
   _msgHandlerMap.insert(std::pair(
-      static_cast<int>(EnMsgType::CREATE_GROUP_MSG),
+      static_cast<int>(EnMsgType::cmd_add_friend_request),
+      std::bind(&ChatService::addFriendRequest, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3)));
+  _msgHandlerMap.insert(std::pair(
+      static_cast<int>(EnMsgType::cmd_group_create),
       std::bind(&ChatService::createGroup, this, std::placeholders::_1,
                 std::placeholders::_2, std::placeholders::_3)));
+  _msgHandlerMap.insert(std::pair(
+      static_cast<int>(EnMsgType::cmd_group_join_request),
+      std::bind(&ChatService::addGroupResquest, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3)));
+  _msgHandlerMap.insert(std::pair(
+      static_cast<int>(EnMsgType::cmd_group_join_response),
+      std::bind(&ChatService::addGroupResponse, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3)));
   _msgHandlerMap.insert(
-      std::pair(static_cast<int>(EnMsgType::ADD_GROUP_MSG),
-                std::bind(&ChatService::addGroup, this, std::placeholders::_1,
+      std::pair(static_cast<int>(EnMsgType::cmd_group_list),
+                std::bind(&ChatService::listGroup, this, std::placeholders::_1,
                           std::placeholders::_2, std::placeholders::_3)));
   _msgHandlerMap.insert(
-      std::pair(static_cast<int>(EnMsgType::GROUP_CHAT_MSG),
+      std::pair(static_cast<int>(EnMsgType::cmd_group_chat),
                 std::bind(&ChatService::groupChat, this, std::placeholders::_1,
                           std::placeholders::_2, std::placeholders::_3)));
+  _msgHandlerMap.insert(std::pair(
+      static_cast<int>(EnMsgType::cmd_group_member_list),
+      std::bind(&ChatService::listGroupMember, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3)));
+  _msgHandlerMap.insert(std::pair(
+      static_cast<int>(EnMsgType::cmd_group_member_add),
+      std::bind(&ChatService::addGroupMember, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3)));
+  _msgHandlerMap.insert(std::pair(
+      static_cast<int>(EnMsgType::cmd_group_member_del),
+      std::bind(&ChatService::delGroupMember, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3)));
+  _msgHandlerMap.insert(std::pair(
+      static_cast<int>(EnMsgType::cmd_set_icon),
+      std::bind(&ChatService::setIcon, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3)));
   if (_redis.connect())
     _redis.init_notify_handler(
         std::bind(&ChatService::handleRedisSubscribeMessage, this,
@@ -76,7 +100,7 @@ MsgHandler ChatService::getHandler(int msgid) {
 void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js,
                         muduo::Timestamp time) {
   ChaoticStreamCipher cipher{0.3, 0.4};
-  int id = js["id"].get<int>();
+  int id = js["account"].get<int>();
   std::string pwd = js["password"];
   User user = _userModel.query(id);
   if (user.getId() == id && user.getPassword() == pwd) {
@@ -84,7 +108,7 @@ void ChatService::login(const muduo::net::TcpConnectionPtr &conn, json &js,
     if (user.getState() == "online") {
       // 该用户已经登陆，不允许登录
       json response;
-      response["msgid"] = EnMsgType::LOGIN_MSG_ACK;
+      response["msgid"] = EnMsgType::;
       response["errno"] = 2;
       response["errmsg"] = "该账户已登录";
       std::string msg = cipher.encrypt(response.dump());

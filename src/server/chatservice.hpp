@@ -49,22 +49,43 @@ public:
     void regiseter(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
     // 一对一聊天业务
     void oneChat(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
-    // 添加好友业务
-    void addFriend(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    //查找好友
+    void searchFriend(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 添加好友请求
+    void addFriendRequest(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 添加好友响应
+    void addFriendResponse(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 获取好友列表
+    void listFriend(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
     // 获取对应消息的处理器
     MsgHandler getHandler(int msgid);
     //客户端异常退出
     void clientCloseException(const muduo::net::TcpConnectionPtr &conn);
     // 创建群组
     void createGroup(const muduo::net::TcpConnectionPtr &conn,json &js,muduo::Timestamp time);
-    // 加入群组
-    void addGroup(const muduo::net::TcpConnectionPtr &conn,json &js,muduo::Timestamp time);
+    // 查找群组
+    void searchGroup(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 加入群组请求
+    void addGroupResquest(const muduo::net::TcpConnectionPtr &conn,json &js,muduo::Timestamp time);
+    // 加入群组响应
+    void addGroupResponse(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 获取群组列表
+    void listGroup(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 获取群组成员
+    void listGroupMember(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 添加群组成员
+    void addGroupMember(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+    // 删除群组成员
+    void delGroupMember(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
     // 群组聊天
     void groupChat(const muduo::net::TcpConnectionPtr &conn,json &js,muduo::Timestamp time);
     // 服务器异常，业务重置方法
     void reset();
     // 从redis获取订阅消息
     void handleRedisSubscribeMessage(int, const std::string&);
-};
+    // 设置头像
+    void setIcon(const muduo::net::TcpConnectionPtr &conn, json &js, muduo::Timestamp time);
+
+};  
 
 #endif //MYMUDUO_CHATSERVICE_HPP

@@ -8,16 +8,24 @@
 //使用更先进的枚举类语法
 enum class EnMsgType
 {
-    LOGIN_MSG = 1,//登录消息
-    LOGIN_OUT_MSG,// 注销消息
-    REG_MSG, //注册消息
-    LOGIN_MSG_ACK, // 登录响应消息
-    REG_MSG_ACK ,//注册响应消息
-    ONE_CHAT_MSG,// 单一聊天消息
-    ADD_FRIEND_MSG,//添加好友消息
+    cmd_regist = 0,
+    cmd_login,
+    cmd_logout,
+    cmd_friend_search,
+    cmd_add_friend_request,
+    cmd_add_friend_response,
+    cmd_friend_list,
+    cmd_friend_chat,
 
-    CREATE_GROUP_MSG,//创建聊天组
-    ADD_GROUP_MSG, // 加入聊天组
-    GROUP_CHAT_MSG,// 组聊天
+    cmd_group_create,
+    cmd_group_search,
+    cmd_group_join_request,
+    cmd_group_join_response,
+    cmd_group_list,
+    cmd_group_chat,
+    cmd_group_member_list,
+    cmd_group_member_add,
+    cmd_group_member_del,
+    cmd_set_icon
 };
 #endif //MYMUDUO_PUBLIC_HPP
