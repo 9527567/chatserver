@@ -42,7 +42,7 @@ public:
 
   [[nodiscard]] std::string getPassword() const { return this->password; }
 
-  [[nodiscard]] std::string getState() const { return this->state; }
+  [[nodiscard]] int getState() const { return this->state; }
 };
 
 #endif // MYMUDUO_USER_HPP
