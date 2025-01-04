@@ -21,10 +21,10 @@ private:
 
 public:
   explicit User(int _id = -1, std::string _name = "",
-                std::string _password = "", std::string _state = "offline",
-                std::string _sig = "", std::string icon = "")
-      : id(_id), name(std::move(_name)), password(std::move(_password)),
-        state(std::move(_state), sig(std::move(_sig))) {}
+                std::string _password = "", int _state = 0,
+                std::string _sig = "", std::string _icon = "")
+      : id(_id), name(_name), password(_password), state(_state), sig(_sig),
+        icon(_icon) {}
 
   void setId(int id) { this->id = id; }
 
@@ -34,7 +34,7 @@ public:
     this->password = std::move(password);
   }
 
-  void setState(std::string state) { this->state = std::move(state); }
+  void setState(int state) { this->state = std::move(state); }
 
   [[nodiscard]] int getId() const { return this->id; }
 
