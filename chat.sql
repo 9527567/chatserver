@@ -3,8 +3,8 @@ use `chat`;
 DROP TABLE IF EXISTS `allgroup`;
 CREATE TABLE `allgroup` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `groupname` varchar(50) CHARACTER SET latin1 NOT NULL,
-  `groupdesc` varchar(200) CHARACTER SET latin1 DEFAULT '',
+  `groupname` varchar(50) CHARACTER SET utf8mb4 NOT NULL,
+  `groupdesc` varchar(200) CHARACTER SET utf8mb4 DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `groupname` (`groupname`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
@@ -32,7 +32,7 @@ CREATE TABLE `groupuser` (
 DROP TABLE IF EXISTS `offlinemessage`;
 CREATE TABLE `offlinemessage` (
   `userid` int(11) NOT NULL,
-  `message` varchar(500) NOT NULL
+  `message` varchar(500) CHARACTER SET utf8mb4 NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
